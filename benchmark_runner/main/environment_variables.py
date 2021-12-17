@@ -2,7 +2,6 @@
 import os
 import time
 import datetime
-import distutils
 
 
 class EnvironmentVariables:
@@ -15,7 +14,7 @@ class EnvironmentVariables:
             value = os.environ.get(var, '')
             if not value:
                 return default
-            return bool(distutils.util.strtobool(value))
+            return value.lower() in ('yes', 'y', 'true', 't', '1')
 
         self._environment_variables_dict = {}
 
@@ -54,7 +53,7 @@ class EnvironmentVariables:
         # collect system metrics True/False
         self._environment_variables_dict['system_metrics'] = env_to_bool('SYSTEM_METRICS', True)
         # CI status update once at the end of CI Pass/Failed
-        self._environment_variables_dict['ci_status'] = env_to_bool('CI_STATUS', False)
+        self._environment_variables_dict['ci_status'] = os.environ.get('CI_STATUS', '')
         # Valid run types
         self._environment_variables_dict['run_types'] = ['test_ci', 'func_ci', 'perf_ci']
         # Run type test_ci/func_ci/perf_ci, default test_ci same environment as func_ci

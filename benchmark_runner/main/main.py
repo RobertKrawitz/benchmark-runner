@@ -1,6 +1,8 @@
 
 import ast  # change string list to list
 
+import argparse
+from benchmark_runner.main.update_data_template_yaml_with_environment_variables import render_yaml_file
 from benchmark_runner.main.environment_variables import *
 from benchmark_runner.common.logger.logger_time_stamp import logger_time_stamp, logger
 from benchmark_runner.benchmark_operator.benchmark_operator_workloads import BenchmarkOperatorWorkloads
@@ -23,14 +25,50 @@ def main():
     """
     The main of benchmark-runner handle Azure operations or Workload runs
     """
+    parser = argparse.ArgumentParser(description='Run benchmarks using benchmark_runner')
+    parser.add_argument('-D', '--define', type=str, help='Define a variable', metavar='var=value', action='append')
+    parser.add_argument('-U', '--undefine', type=str, help='Undefine a variable from the environment', metavar='var', action='append')
+    parser.add_argument('--install_ocp_version', type=str, help='OCP version to install', metavar='version string')
+    parser.add_argument('--azure_cluster_start', action='store_true', help='Start Azure cluster')
+    parser.add_argument('--azure_cluster_stop', action='store_true', help='Stop Azure cluster')
+    parser.add_argument('--install_ocp_resources', action='store_true', help='Install OCP resources')
+    parser.add_argument('--ci-status', type=str, metavar='ci status', help=argparse.SUPPRESS)
+    parser.add_argument('-w', '--workload', type=str, help='Run workload',  metavar='workload')
+    args = parser.parse_args()
+
     environment_variables_dict = environment_variables.environment_variables_dict
+    if args.install_ocp_version:
+        environment_variables.environment_variables_dict['install_ocp_version'] = args.install_ocp_version
+    if args.install_ocp_resources:
+        environment_variables.environment_variables_dict['install_ocp_resources'] = True
+    if args.azure_cluster_start:
+        environment_variables.environment_variables_dict['azure_cluster_start'] = True
+    if args.azure_cluster_stop:
+        environment_variables.environment_variables_dict['azure_cluster_stop'] = True
+    if args.ci_status:
+        environment_variables.environment_variables_dict['ci_status'] = args.ci_status
+    if args.workload:
+        environment_variables.environment_variables_dict['workload'] = args.workload
+    if args.undefine:
+        for var in args.undefine:
+            environment_variables.environment_variables_dict.pop(var, None)
+    if args.define:
+        for var in args.define:
+            if var.startswith('='):
+                raise Exception(f'Invalid variable definition "{var}"')
+            else:
+                value=''
+                if '=' in var and not var.endswith('='):
+                    var, value = var.split('=')
+                environment_variables.environment_variables_dict[var.replace('-', '_')] = value
+
     # environment variables data
     workload = environment_variables_dict.get('workload', '')
-    azure_cluster_stop = environment_variables_dict.get('azure_cluster_stop', '')
-    azure_cluster_start = environment_variables_dict.get('azure_cluster_start', '')
+    azure_cluster_stop = environment_variables_dict.get('azure_cluster_stop', False)
+    azure_cluster_start = environment_variables_dict.get('azure_cluster_start', False)
     ci_status = environment_variables_dict.get('ci_status', '')
-    install_ocp_version = environment_variables_dict.get('install_ocp_version', '')
-    install_ocp_resources = environment_variables_dict.get('install_ocp_resources', '')
+    install_ocp_version = environment_variables_dict.get('install_ocp_version', False)
+    install_ocp_resources = environment_variables_dict.get('install_ocp_resources', False)
 
     if workload or ci_status:
         es_host = environment_variables_dict.get('elasticsearch', '')
@@ -38,6 +76,7 @@ def main():
         kubeadmin_password = environment_variables_dict.get('kubeadmin_password', '')
         benchmark_operator_workload = BenchmarkOperatorWorkloads(kubeadmin_password=kubeadmin_password, es_host=es_host,
                                                                  es_port=es_port)
+    environment_variables.update_derived_environment_variables()
 
     @logger_time_stamp
     def azure_cluster_start_stop():
@@ -126,6 +165,8 @@ def main():
 
         # benchmark-operator node selector
         if environment_variables_dict.get('pin_node_benchmark_operator'):
+            # Note that the pin_node argument is the name of the *key* of the pin node, not
+            # the actual pin node!
             benchmark_operator_workload.update_node_selector(runner_path=environment_variables_dict.get('runner_path', ''),
                                                              yaml_path='benchmark-operator/config/manager/manager.yaml',
                                                              pin_node='pin_node_benchmark_operator')
@@ -139,7 +180,7 @@ def main():
         install_step = environment_variables_dict.get('install_step', '')
         install_ocp(step=install_step)
     # install_ocp_resource
-    elif install_ocp_resources == 'True':
+    elif install_ocp_resources:
         install_resources()
     elif ci_status == 'pass' or ci_status == 'failed':
         update_ci_status()

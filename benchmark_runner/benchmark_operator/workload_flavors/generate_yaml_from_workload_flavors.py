@@ -23,7 +23,7 @@ class TemplateOperations:
         else:
             self.__environment_variables_dict['es_suffix'] = ''
         # hammerdb storage
-        if self.__environment_variables_dict.get('ocs_pvc', '') == 'True':
+        if self.__environment_variables_dict.get('ocs_pvc', True):
             self.__storage_type = 'ocs_pvc'
         else:
             self.__storage_type = 'ephemeral'

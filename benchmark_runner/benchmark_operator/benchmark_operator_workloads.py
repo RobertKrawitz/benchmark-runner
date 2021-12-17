@@ -32,7 +32,7 @@ class BenchmarkOperatorWorkloads:
         self.__time_stamp_format = self.__environment_variables_dict.get('time_stamp_format', '')
         self.__runner_version = self.__environment_variables_dict.get('build_version', '')
         self.__run_type = self.__environment_variables_dict.get('run_type', '')
-        self.__system_metrics = self.__environment_variables_dict.get('system_metrics', '')
+        self.__system_metrics = self.__environment_variables_dict.get('system_metrics', True)
         self.__elasticsearch = self.__environment_variables_dict.get('elasticsearch', '')
         self.__run_artifacts = self.__environment_variables_dict.get('run_artifacts_path', '')
         self.__date_key = self.__environment_variables_dict.get('date_key', '')
@@ -442,7 +442,7 @@ class BenchmarkOperatorWorkloads:
             status = self.__oc.wait_for_pod_completed(label='app=stressng_workload', workload=workload)
             status = 'complete' if status else 'failed'
             # system metrics
-            if environment_variables.environment_variables_dict['system_metrics'] == 'True':
+            if self.__system_metrics:
                 self.system_metrics_collector(workload=workload)
             # save run artifacts logs
             run_artifacts_url = self.__create_run_artifacts(workload=workload)
@@ -497,7 +497,7 @@ class BenchmarkOperatorWorkloads:
             status = self.__oc.wait_for_vm_completed(workload=workload)
             status = 'complete' if status else 'failed'
             # system metrics
-            if environment_variables.environment_variables_dict['system_metrics'] == 'True':
+            if self.__system_metrics:
                 self.system_metrics_collector(workload=workload)
             # save run artifacts logs of benchmark-controller-manager and system-metrics
             run_artifacts_url = self.__create_run_artifacts(workload=workload, pod=False)
@@ -563,7 +563,7 @@ class BenchmarkOperatorWorkloads:
             status = self.__oc.wait_for_pod_completed(label='app=uperf-bench-client', workload=workload)
             status = 'complete' if status else 'failed'
             # system metrics
-            if environment_variables.environment_variables_dict['system_metrics'] == 'True':
+            if self.__system_metrics:
                 self.system_metrics_collector(workload=workload)
             # save run artifacts logs
             run_artifacts_url = self.__create_run_artifacts(workload=workload, labels=['uperf-client', 'uperf-server'])
@@ -621,7 +621,7 @@ class BenchmarkOperatorWorkloads:
             status = self.__oc.wait_for_vm_completed(workload=workload)
             status = 'complete' if status else 'failed'
             # system metrics
-            if environment_variables.environment_variables_dict['system_metrics'] == 'True':
+            if self.__system_metrics:
                 self.system_metrics_collector(workload=workload)
             # save run artifacts logs of benchmark-controller-manager and system-metrics
             run_artifacts_url = self.__create_run_artifacts(workload=workload, pod=False)
@@ -680,7 +680,7 @@ class BenchmarkOperatorWorkloads:
             status = self.__oc.wait_for_pod_completed(label='app=hammerdb_workload', workload=workload)
             status = 'complete' if status else 'failed'
             # system metrics
-            if environment_variables.environment_variables_dict['system_metrics'] == 'True':
+            if self.__system_metrics:
                 self.system_metrics_collector(workload=workload)
             # save run artifacts logs
             run_artifacts_url = self.__create_run_artifacts(labels=[f'{workload}-creator', f'{workload}-workload'], database=database)
@@ -751,7 +751,7 @@ class BenchmarkOperatorWorkloads:
             status = self.__oc.wait_for_vm_completed(workload=workload)
             status = 'complete' if status else 'failed'
             # system metrics
-            if environment_variables.environment_variables_dict['system_metrics'] == 'True':
+            if self.__system_metrics:
                 self.system_metrics_collector(workload=workload)
             # save run artifacts logs of benchmark-controller-manager and system-metrics
             run_artifacts_url = self.__create_run_artifacts(workload=workload, pod=False)
@@ -795,7 +795,7 @@ class BenchmarkOperatorWorkloads:
         self.__template.generate_yamls(workload=workload_full_name)
         if 'hammerdb' in workload_full_name:
             # check if ocs is installed
-            if self.__environment_variables_dict.get('ocs_pvc', '') == 'True':
+            if self.__environment_variables_dict.get('ocs_pvc', True):
                 if not self.__oc.is_ocs_installed():
                     raise OCSNonInstalled()
             class_method = getattr(BenchmarkOperatorWorkloads, f'{workload_name[0]}_{workload_name[1]}')
