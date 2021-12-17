@@ -39,6 +39,7 @@ class BenchmarkOperatorWorkloads:
         self.__key = self.__environment_variables_dict.get('key', '')
         self.__endpoint_url = self.__environment_variables_dict.get('endpoint_url', '')
         self.__save_artifacts_local = self.__environment_variables_dict.get('save_artifacts_local', '')
+        self.__enable_prometheus_snapshot = self.__environment_variables_dict.get('enable_prometheus_snapshot', '')
         self.__ssh = SSH()
         self.__kubeadmin_password = kubeadmin_password
         self.__oc = OC(kubeadmin_password=self.__kubeadmin_password)
