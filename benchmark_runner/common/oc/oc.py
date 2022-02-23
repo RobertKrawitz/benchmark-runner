@@ -48,7 +48,7 @@ class OC(SSH):
         This method return ocs version
         :return:
         """
-        return self.run("oc get csv -n openshift-storage $(oc get csv -n openshift-storage --no-headers | awk '{ print $1; }') -ojsonpath='{.spec.version}' ")
+        return self.run("oc get csv -n openshift-storage -ojsonpath='{.items[0].spec.labels.full_version}'")
 
     def get_kata_version(self):
         """
